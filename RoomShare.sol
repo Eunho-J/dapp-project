@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.7.0 <0.9.0;
 
-contract RoomShare {
+import './IRoomShare.sol';
+
+contract RoomShare is IRoomShare{
 
   function getMyRents() external view returns(Rent[] memory) {
     /* 함수를 호출한 유저의 대여 목록을 가져온다. */
