@@ -23,22 +23,12 @@ contract RoomShare is IRoomShare{
 
   function getMyRents() override external view returns(Rent[] memory) {
     /* 함수를 호출한 유저의 대여 목록을 가져온다. */
-    uint256 length = userRentMapping[msg.sender].length;
-    Rent[] memory myRentList = new Rent[](length);
-    for(uint256 i = 0; i < length; i++) {
-      myRentList[i] = userRentMapping[msg.sender][i];
-    }
-    return myRentList;
+    return userRentMapping[msg.sender];
   }
 
   function getRoomRentHistory(uint _roomId) override external view returns(Rent[] memory) {
     /* 특정 방의 대여 히스토리를 보여준다. */
-    uint256 length = roomRentMapping[_roomId].length;
-    Rent[] memory rentHistory = new Rent[](length);
-    for(uint256 i = 0; i < length; i++) {
-      rentHistory[i] = roomRentMapping[_roomId][i];
-    }
-    return rentHistory;
+    return roomRentMapping[_roomId];
   }
 
   function shareRoom( string calldata name, 
@@ -48,7 +38,7 @@ contract RoomShare is IRoomShare{
      * 1. isActive 초기값은 true로 활성화, 함수를 호출한 유저가 방의 소유자이며, 365 크기의 boolean 배열을 생성하여 방 객체를 만든다.
      * 2. 방의 id와 방 객체를 매핑한다.
      */
-    roomMapping[roomId] = Room(roomId, name, location, true, price * 1e15, msg.sender, new bool[](365));
+    roomMapping[roomId] = Room(roomId, name, location, true, price, msg.sender, new bool[](365));
     emit NewRoom(roomId++);
   }
 
@@ -66,7 +56,7 @@ contract RoomShare is IRoomShare{
     for (uint256 i = checkInDate; i < checkOutDate; i++) {
       require(!selectedRoom.isRented[i], "selected room has already rented for that day");
     }
-    require(msg.value == (checkOutDate - checkInDate) * selectedRoom.price, "received ether does not match");
+    require(msg.value == (checkOutDate - checkInDate) * selectedRoom.price * 1e15, "received ether does not match");
 
     _sendFunds(selectedRoom.owner, msg.value);
     _createRent(_roomId, checkInDate, checkOutDate);

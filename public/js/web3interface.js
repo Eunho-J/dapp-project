@@ -4,7 +4,7 @@ let user;
 const mEthPrice = 1600;
 const currentYear = 2022;
 
-const contract_address = "0xcf1631e7dF26c06656086011a85B2eDB0C3Bd601"; // 따옴표 안에 주소값 복사 붙여넣기
+const contract_address = "0x8A9d2cd674D8ff07cB3F29452A31571aC7BBd947"; // 따옴표 안에 주소값 복사 붙여넣기
 
 const logIn = async () => {
   const ID = prompt("choose your ID");
@@ -91,7 +91,6 @@ let checkInDatedom;
 let checkOutDatedom;
 let roomsSelect;
 
-let roomShareContract = getRoomShareContract();
 
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById('logIn').addEventListener("click", logIn);
@@ -153,14 +152,15 @@ const shareRoom = async () => {
   _updateRooms();
 }
 
-
 const _shareRoom = async (name, location, price) => {
   // RoomShareContract의 shareRoom 함수를 호출한다.
   // 방 이름, 위치, 하루당 대여 요금을 입력하고 컨트랙트에 등록한다.
   // 에러 발생시 call 또는 send 함수의 파라미터에 from, gas 필드 값을 제대로 넣었는지 확인한다. (e.g. {from: ..., gas: 3000000, ...})
   // 트랜잭션이 올바르게 발생하면 알림 팝업을 띄운다. (e.g. alert("등록"))
   // 화면을 업데이트 한다.
-  await roomShareContract.methods.shareRoom(name, location, price).call({from:user}).then(result=>{
+
+  const roomShareContract = await getRoomShareContract();
+  await roomShareContract.methods.shareRoom(name, location, price).send({from:user, gas:3000000}).then((result)=>{
     alert("등록완료");
   }).catch(err=>{
     alert("등록실패");
@@ -170,6 +170,8 @@ const _shareRoom = async (name, location, price) => {
 
 const _getMyRents = async () => {
   // 내가 대여한 방 리스트를 불러온다.
+  const roomShareContract = await getRoomShareContract();
+  const myRents = await roomShareContract.methods.getMyRents().call({from: user, gas:3000000});
   return myRents;
 }
 
@@ -190,11 +192,14 @@ const displayMyRents = async () => {
 
 const _getAllRooms = async () => {
   // Room ID 를 기준으로 컨트랙트에 등록된 모든 방 객체의 데이터를 불러온다.
+  const roomShareContract = await getRoomShareContract();
+  const rooms = await roomShareContract.methods.getAllRooms().call({from: user, gas:3000000});
   return rooms;
 }
 
 const displayAllRooms = async () => {
   const allRooms = await _getAllRooms();
+  // console.log("room[0].id:".concat(allRooms[0].id))
 	let html = "";
 	for(let i = 0; i < allRooms.length; ++i) {
 		html += "<tr>";
@@ -215,7 +220,12 @@ const listAllRooms = async () => {
 	for(let i = 0; i < allRooms.length; ++i) {
     if(allRooms[i].isActive == false)
 			continue;
-    const jsonstr = JSON.stringify(allRooms[i]).replace(" ","+");
+    // console.log(i.toString().concat(allRooms[i].id))
+    let roomDict = {};
+    for (var key in allRooms[i]) {
+      roomDict[key] = allRooms[i][key];
+    }
+    const jsonstr = JSON.stringify(roomDict).replace(" ","+");
 		html += `<option value=${jsonstr}>`;
 			html += allRooms[i].id + " | "
 			html += allRooms[i].name + " | "
@@ -229,11 +239,16 @@ const listAllRooms = async () => {
 }
 
 const returnOptionsJSON = () => {
-  const obj = roomsSelect.options[roomsSelect.selectedIndex].value;
-  if(obj) {
-    const jsonobj = JSON.parse(obj);
+  if (roomsSelect.selectedIndex == -1) {
+    roomsSelect.selectedIndex = 0;
+  }
+  const obj = roomsSelect.options[roomsSelect.selectedIndex];
+  if(obj && obj.value) {
+    // console.log("obj:".concat(obj.value));
+    const jsonobj = JSON.parse(obj.value);
     return jsonobj;
   }
+  return null;
 }
 
 const calculatePrice = (checkInDate,checkOutDate) => {
@@ -257,6 +272,7 @@ const rentRoom = async () => {
   const _price = calculatePrice(checkInDate,checkOutDate);
   const jsonobj = returnOptionsJSON();
   const roomId = jsonobj.id;
+  // const roomId = 0;
 
   await _rentRoom(roomId, checkInDate, checkOutDate, _price);
 
@@ -272,6 +288,16 @@ const _rentRoom = async (roomId, checkInDate, checkOutDate, price) => {
   // 단위는 finney = milli Eth (10^15)
   // Room ID에 해당하는 방이 체크인하려는 날짜에 대여되어서 대여되지 않는다면 _recommendDate 함수를 호출한다.
   // 화면을 업데이트 한다.
+
+  const roomShareContract = await getRoomShareContract();
+  await roomShareContract.methods.rentRoom(roomId, checkInDate, checkOutDate).send({from: user, gas:3000000, value:price*1e15})
+    .then(()=>{
+      alert("예약 성공");
+    }).catch(async (err)=>{
+      console.log(err);
+      console.log((checkOutDate-checkInDate)*price*1e15)
+      await _recommendDate(roomId, checkInDate, checkOutDate);
+    })
 }
 
 const _recommendDate = async (roomId, checkInDate, checkOutDate) => {
@@ -279,26 +305,44 @@ const _recommendDate = async (roomId, checkInDate, checkOutDate) => {
   // 기존에 대여된 날짜가 언제부터 언제까지인지 알림 팝업으로 표시한다.
   // checkInDate <= 대여된 체크인 날짜 , 대여된 체크아웃 날짜 < checkOutDate
   // 주어진 헬퍼 함수 dateFromDay 를 이용한다.
+  const roomShareContract = await getRoomShareContract();
+  await roomShareContract.methods.recommendDate(roomId, checkInDate, checkOutDate).call({from:user, gas:3000000})
+    .then(response => {
+      alert("겹치는 예약 기간:".concat(dateFromDay(currentYear,response[0]).toDateString()).concat("~").concat(dateFromDay(currentYear, response[1]).toDateString()));
+    }).catch(err => {
+      console.log(err);
+      console.log("dates",checkInDate, checkOutDate)
+      alert("가격과 예약 날짜를 확인해 주세요. 체크인과 체크아웃이 동일할 수 없습니다.");
+    })
 }
 
 
-const getRoomRentHistory = async () => {
+const _getRoomRentHistory = async () => {
   // 선택된 방에 대해 그동안 대여했던 사람들의 목록(히스토리)을 불러온다.
   // 빈 배열을 만들고 주어진 헬퍼 함수 returnOptionsJSON 를 사용하여 선택된 방의 ID 값을 이용해 컨트랙트를 호출한다.
   // 헬퍼 함수 dateFromDay 를 이용한다.
-  
-  return history
+  const jsonobj = returnOptionsJSON();
+  if (jsonobj) {
+    const roomId = jsonobj.id;
+    const roomShareContract = await getRoomShareContract();
+
+    const history = await roomShareContract.methods.getRoomRentHistory(roomId).call({from:user});
+    if (history) {
+      return history;
+    }
+  }
+  return [];
 }
 
 
 const displayRoomHistory = async () => {
-	const history = await getRoomRentHistory();
+	const history = await _getRoomRentHistory();
 	let html = "";
 	for(let i = 0; i < history.length; ++i) {
 		html += "<tr>";
     html += "<td>" + history[i].id + "</td>"
-    html += "<td>" + history[i].checkInDate + "</td>"
-    html += "<td>" + history[i].checkOutDate + "</td>"
+    html += "<td>" + dateFromDay(currentYear,history[i].checkInDate).toDateString() + "</td>"
+    html += "<td>" + dateFromDay(currentYear,history[i].checkOutDate).toDateString() + "</td>"
     html += "<td>" + history[i].renter.slice(0,12)+"..." + "</td>"
 		html += "</tr>";
 	}
