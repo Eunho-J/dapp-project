@@ -60,6 +60,7 @@ contract RoomShare is IRoomShare{
      *    c. 함수를 호출한 유저가 보낸 이더리움 값이 대여한 날에 맞게 지불되었는지(단위는 1 Finney, 10^15 Wei) 
      * 2. 방의 소유자에게 값을 지불하고 (msg.value 사용) createRent를 호출한다.
      */
+    require(checkOutDate - checkInDate > 0, "cannot rent with 0 days");
     Room memory selectedRoom = roomMapping[_roomId];
     require(selectedRoom.isActive, "selected room is not active");
     for (uint256 i = checkInDate; i < checkOutDate; i++) {
@@ -102,8 +103,9 @@ contract RoomShare is IRoomShare{
     for (ret[0] = checkInDate; ret[0] < checkOutDate; ret[0]++) {
       if (selectedRoom.isRented[ret[0]]) break;
     }
+    if (checkOutDate == 0) return ret;
     for (ret[1] = checkOutDate - 1; ret[1] >= checkInDate; ret[1]--) {
-      if (selectedRoom.isRented[ret[1]]) break;
+      if (selectedRoom.isRented[ret[1]] || ret[1] == 0) break;
     }
 
     require(ret[0] < checkOutDate && ret[1] >= checkInDate, "not rented. check payments");

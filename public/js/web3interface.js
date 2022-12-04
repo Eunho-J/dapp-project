@@ -4,7 +4,7 @@ let user;
 const mEthPrice = 1600;
 const currentYear = 2022;
 
-const contract_address = ""; // 따옴표 안에 주소값 복사 붙여넣기
+const contract_address = "0xcf1631e7dF26c06656086011a85B2eDB0C3Bd601"; // 따옴표 안에 주소값 복사 붙여넣기
 
 const logIn = async () => {
   const ID = prompt("choose your ID");
@@ -91,6 +91,8 @@ let checkInDatedom;
 let checkOutDatedom;
 let roomsSelect;
 
+let roomShareContract = await getRoomShareContract();
+
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById('logIn').addEventListener("click", logIn);
   document.getElementById('rentRoom').addEventListener("click", rentRoom);
@@ -158,6 +160,11 @@ const _shareRoom = async (name, location, price) => {
   // 에러 발생시 call 또는 send 함수의 파라미터에 from, gas 필드 값을 제대로 넣었는지 확인한다. (e.g. {from: ..., gas: 3000000, ...})
   // 트랜잭션이 올바르게 발생하면 알림 팝업을 띄운다. (e.g. alert("등록"))
   // 화면을 업데이트 한다.
+  await roomShareContract.methods.shareRoom(name, location, price).call({from:user}).then(result=>{
+    alert("등록완료");
+  }).catch(err=>{
+    alert("등록실패");
+  });
 }
 
 
