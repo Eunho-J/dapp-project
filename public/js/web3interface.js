@@ -7,12 +7,13 @@ const currentYear = 2022;
 const contract_address = "0x1a9596fCe3Bdba70D1B115F82BF0353C8D746dA2"; // 따옴표 안에 주소값 복사 붙여넣기
 
 const logIn = async () => {
-  const ID = prompt("choose your ID");
-
   // 개발 시 (ganache)
+  // const ID = prompt("choose your ID");
+
   // web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
 
   // 과제 제출 시 (metamask)
+  const ID = 0;
   web3 = await metamaskRequest();
 
   user = await getAccountInfos(Number(ID));
