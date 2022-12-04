@@ -91,7 +91,7 @@ let checkInDatedom;
 let checkOutDatedom;
 let roomsSelect;
 
-let roomShareContract = await getRoomShareContract();
+let roomShareContract = getRoomShareContract();
 
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById('logIn').addEventListener("click", logIn);
