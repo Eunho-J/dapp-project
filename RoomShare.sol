@@ -101,5 +101,4 @@ contract RoomShare is IRoomShare{
     require(ret[0] < checkOutDate && ret[1] >= checkInDate, "not rented. check payments");
     return ret;
   }
-
 }

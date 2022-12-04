@@ -4,16 +4,16 @@ let user;
 const mEthPrice = 1600;
 const currentYear = 2022;
 
-const contract_address = "0x8A9d2cd674D8ff07cB3F29452A31571aC7BBd947"; // 따옴표 안에 주소값 복사 붙여넣기
+const contract_address = "0x1a9596fCe3Bdba70D1B115F82BF0353C8D746dA2"; // 따옴표 안에 주소값 복사 붙여넣기
 
 const logIn = async () => {
   const ID = prompt("choose your ID");
 
   // 개발 시 (ganache)
-  web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
+  // web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
 
   // 과제 제출 시 (metamask)
-  // web3 = await metamaskRequest();
+  web3 = await metamaskRequest();
 
   user = await getAccountInfos(Number(ID));
 
@@ -225,7 +225,7 @@ const listAllRooms = async () => {
     for (var key in allRooms[i]) {
       roomDict[key] = allRooms[i][key];
     }
-    const jsonstr = JSON.stringify(roomDict).replace(" ","+");
+    const jsonstr = JSON.stringify(roomDict).replaceAll(" ","+");
 		html += `<option value=${jsonstr}>`;
 			html += allRooms[i].id + " | "
 			html += allRooms[i].name + " | "
@@ -245,7 +245,7 @@ const returnOptionsJSON = () => {
   const obj = roomsSelect.options[roomsSelect.selectedIndex];
   if(obj && obj.value) {
     // console.log("obj:".concat(obj.value));
-    const jsonobj = JSON.parse(obj.value);
+    const jsonobj = JSON.parse(obj.value.replaceAll("+", " "));
     return jsonobj;
   }
   return null;
