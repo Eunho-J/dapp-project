@@ -313,7 +313,7 @@ const _recommendDate = async (roomId, checkInDate, checkOutDate) => {
     }).catch(err => {
       console.log(err);
       console.log("dates",checkInDate, checkOutDate)
-      alert("가격과 예약 날짜를 확인해 주세요. 체크인과 체크아웃이 동일할 수 없습니다.");
+      alert("가격에 대한 지불 가능 여부와 예약 날짜를 확인해 주세요.\n*(체크인과 체크아웃이 동일할 수 없습니다.)");
     })
 }
 
