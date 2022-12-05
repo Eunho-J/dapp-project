@@ -221,7 +221,6 @@ const listAllRooms = async () => {
 	for(let i = 0; i < allRooms.length; ++i) {
     if(allRooms[i].isActive == false)
 			continue;
-    // console.log(i.toString().concat(allRooms[i].id))
     let roomDict = {};
     for (var key in allRooms[i]) {
       roomDict[key] = allRooms[i][key];
@@ -273,7 +272,6 @@ const rentRoom = async () => {
   const _price = calculatePrice(checkInDate,checkOutDate);
   const jsonobj = returnOptionsJSON();
   const roomId = jsonobj.id;
-  // const roomId = 0;
 
   await _rentRoom(roomId, checkInDate, checkOutDate, _price);
 
@@ -291,7 +289,8 @@ const _rentRoom = async (roomId, checkInDate, checkOutDate, price) => {
   // 화면을 업데이트 한다.
 
   const roomShareContract = await getRoomShareContract();
-  await roomShareContract.methods.rentRoom(roomId, checkInDate, checkOutDate).send({from: user, gas:3000000, value:price*1e15})
+  await roomShareContract.methods.rentRoom(roomId, checkInDate, checkOutDate)
+    .send({from: user, gas:3000000, value:price*1e15})
     .then(()=>{
       alert("예약 성공");
     }).catch(async (err)=>{
@@ -309,7 +308,11 @@ const _recommendDate = async (roomId, checkInDate, checkOutDate) => {
   const roomShareContract = await getRoomShareContract();
   await roomShareContract.methods.recommendDate(roomId, checkInDate, checkOutDate).call({from:user, gas:3000000})
     .then(response => {
-      alert("겹치는 예약 기간:".concat(dateFromDay(currentYear,response[0]).toDateString()).concat("~").concat(dateFromDay(currentYear, response[1]).toDateString()));
+      alert("겹치는 예약 기간:"
+        .concat(dateFromDay(currentYear,response[0]).toDateString())
+        .concat("~")
+        .concat(dateFromDay(currentYear, response[1]).toDateString())
+      );
     }).catch(err => {
       console.log(err);
       console.log("dates",checkInDate, checkOutDate)
